@@ -95,11 +95,13 @@ class MainActivity : AppCompatActivity() {
 
     private var baList: ArrayList<BAInfo> = ArrayList()
 
-
     private val TAG = "SHLEE"
     private var isBaRunning = false
     private var mCurrentContextId: String? = null
     private var mCurrentAppId: String? = null
+    private lateinit var mCurrentBaInfo: BAInfo
+    private var validFromToMills: Long = 0
+    private var validUntilToMills: Long = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -114,10 +116,28 @@ class MainActivity : AppCompatActivity() {
         mCurrentAppId = "http://kids.pbs.org/a2"
         mCurrentContextId = "http://kids.pbs.org"
 
+        //테스트를 위한 현재 동작중인 BA설정을 한다.
+        mCurrentBaInfo = BAInfo(
+            mCurrentContextId, mCurrentAppId, null, "2024-05-07T02:30:47Z",
+            "2024-05-07T05:30:47Z", null, null, null, null
+        )
+
+        Log.i(TAG, "현재 동작중인 BA 정보 = [$mCurrentBaInfo]")
+
         baListUp(held)
+        printBaList()
+
+        baListMgr()
+    }
+
+    private fun printBaList() {
+        baList.forEach { Log.i(TAG, "$it") }
     }
 
     //목록제외 조건 적용 후 나머지 리스트업한다.
+    //BA후보군으로 관리 하도록 파싱 후 파싱 데이터 List에 추가 한다.
+
+    @Synchronized
     private fun baListUp(held: String) {
         Log.i(TAG,"held = [$held]")
         var bcastEntryPackageUrl: String?
@@ -129,8 +149,6 @@ class MainActivity : AppCompatActivity() {
         var validUntil: String?
         var default: String?
         var requiredCapabilities: String?
-        var validFromToMills: Long = 0
-        var validUntilToMills: Long = 0
 
         val currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
         Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
@@ -163,44 +181,20 @@ class MainActivity : AppCompatActivity() {
                             requiredCapabilities = parser.getAttributeValue(null, "requiredCapabilities")
 
 
-                            Log.i(TAG, "bcastEntryPackageUrl:$bcastEntryPackageUrl, bcastEntryPageUrl:$bcastEntryPageUrl, " +
-                                    "appContextId:$appContextId, appId:$appId, " +
-                                    "validFrom:$validFrom, validUntil:$validUntil, default:$default, bbandEntryPageUrl:$bbandEntryPageUrl, " +
-                                    "requiredCapabilities:$requiredCapabilities")
+//                            Log.i(TAG, "bcastEntryPackageUrl:$bcastEntryPackageUrl, bcastEntryPageUrl:$bcastEntryPageUrl, " +
+//                                    "appContextId:$appContextId, appId:$appId, " +
+//                                    "validFrom:$validFrom, validUntil:$validUntil, default:$default, bbandEntryPageUrl:$bbandEntryPageUrl, " +
+//                                    "requiredCapabilities:$requiredCapabilities")
 
-                            //ListUp제외 조건
-                            //requiredCapability가 존재 해야 하고 해당 변수내용이 지원되어야 한다. 그러나 해당 기능의 자세한 부분은 추후 지원으로 변경.
-                            //일단은 테스트용도로로 체크기능을 넣고 후에 체크 기능 제거 후 처리 하도록 한다.
                             //if(requiredCapabilities != null) {
                                 Log.i(TAG, "requiredCapability = [$requiredCapabilities]")
+                            baList.add(
+                                BAInfo(
+                                    appContextId, appId, requiredCapabilities, validFrom, validUntil,
+                                    default, bbandEntryPageUrl, bcastEntryPageUrl, bcastEntryPackageUrl
+                                )
+                            )
 
-                                //현재 시간 기준 vaildFrom과 valildUntil체크 (mills)
-                                //string to mills로 변환하여 비교 한다.
-                                if(validFrom != null) {
-                                    Log.i(TAG, "validFrom = $validFrom")
-                                    validFromToMills = getMillisFromUtcDatetime(validFrom)
-                                    Log.i(TAG, "validFromToMills:[$validFromToMills]")
-                                }
-
-                                if(validUntil != null) {
-                                    validUntilToMills = getMillisFromUtcDatetime(validUntil)
-                                    Log.i(TAG, "validUntilToMills:[$validUntilToMills]")
-                                }
-
-                                if(validFrom != null && validUntil != null) {
-                                    Log.i(TAG, "[$validFromToMills][$validUntilToMills][$currentDateMS]")
-                                    if(currentDateMS in (validFromToMills + 1)..<validUntilToMills) {
-                                        Log.i(TAG, "조건 충족함 리스트 업.")
-                                        baList.add(
-                                            BAInfo(
-                                                appContextId, appId, requiredCapabilities, validFrom, validUntil,
-                                                default, bbandEntryPageUrl, bcastEntryPageUrl, bcastEntryPackageUrl
-                                            )
-                                        )
-                                    } else {
-                                        Log.i(TAG, "조건 충족하지 않음!")
-                                    }
-                                }
                             //}
                         }
                     }
@@ -213,28 +207,60 @@ class MainActivity : AppCompatActivity() {
         }
 
         Log.i(TAG, "파싱 종료.")
-        baList.forEach {
-            Log.i(TAG, "리스트 업 = [$it]")
-        }
-
-        baListMgr()
     }
 
+    @Synchronized
     private fun baListMgr() {
         if(baList.isNotEmpty()) {
+            //현재 시간 기준 vaildFrom과 valildUntil체크 (mills)
+            //string to mills로 변환하여 비교 한다.
+            /*
+            var validFromToMills: Long = 0
+            var validUntilToMills: Long = 0
+            if(validFrom != null) {
+                Log.i(TAG, "validFrom = $validFrom")
+                validFromToMills = getMillisFromUtcDatetime(validFrom)
+                Log.i(TAG, "validFromToMills:[$validFromToMills]")
+            }
+
+            if(validUntil != null) {
+                validUntilToMills = getMillisFromUtcDatetime(validUntil)
+                Log.i(TAG, "validUntilToMills:[$validUntilToMills]")
+            }
+
+            if(validFrom != null && validUntil != null) {
+                Log.i(TAG, "[$validFromToMills][$validUntilToMills][$currentDateMS]")
+                if(currentDateMS in (validFromToMills + 1)..<validUntilToMills) {
+                    Log.i(TAG, "조건 충족함 리스트 업.")
+
+                } else {
+                    Log.i(TAG, "조건 충족하지 않음!")
+                }
+            }
+             */
             Log.i(TAG, "ba List가 존재 함.")
 
             if(isBaRunning) {
                 Log.i(TAG, "현재 동작 중인 BA가 존재 함.")
 
                 //app&appContextId를 현재BA의 Id와 비교
+
                 run loop@{
                     baList.forEach {
                         if(it.appId == mCurrentAppId && it.appContextId == mCurrentContextId) {
                             Log.i(TAG, "새로운 BA를 ReLoad하지 않음. 선택된 목록의 정보만 변경") //정보? 무엇을?
+                            //Todo. 선택된 BA정보 업데이트
                             return@loop
                         } else {
+                            //현재 시간정보와 현재 동작중인 BA의 validUtil보다 크면 BA를 종료 한다.
+                            val currentDateToMs = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
+                            mCurrentBaInfo.validUntil.let {
+                                validUntilToMills = getMillisFromUtcDatetime(mCurrentBaInfo.validUntil!!)
 
+                                if(currentDateToMs > validUntilToMills) {
+                                    Log.i(TAG, "동작 시간을 초과 하였습니다. BA를 종료 합니다.")
+                                }
+                            }
                         }
                     }
                 }
