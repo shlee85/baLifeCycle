@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
     private var mCurrentContextId: String? = null
     private var mCurrentAppId: String? = null
 
-    private lateinit var mCurrentBaInfo: BAInfo
+    private var mCurrentBaInfo: BAInfo? = null
 
     private lateinit var binding: ActivityMainBinding
     private var mHandler: Handler? = null
@@ -149,6 +149,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnCurBaInfo.setOnClickListener {
             Log.i(TAG, "현재 동작중인 BA의 정보 요청")
+            Log.i(TAG, "$mCurrentBaInfo")
         }
         binding.btnCurBaList.setOnClickListener {
             printBaList()
@@ -162,18 +163,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnHeld3.setOnClickListener {
             parseHeld(held3)
         }
-
-        //현재 동작중인 BA의 app 및 appContextId를 임시로 만든다.
-        mCurrentAppId = "http://kids.pbs.org/a2"
-        mCurrentContextId = "http://kids.pbs.org"
-
-        //테스트를 위한 현재 동작중인 BA설정을 한다.
-        mCurrentBaInfo = BAInfo(
-            mCurrentContextId, mCurrentAppId, null, "2024-05-07T02:30:47Z",
-            "2024-05-07T05:30:47Z", null, null, null, null
-        )
-
-        Log.i(TAG, "현재 동작중인 BA 정보 = [$mCurrentBaInfo]")
 
         if(mHandler == null) {
             mHandler = Handler(Looper.getMainLooper()) {
@@ -290,28 +279,34 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
 
         if(baList.isNotEmpty()) {
-            Log.i(TAG, "ba List가 존재 함.")
+            Log.i(TAG, "ba List가 존재 함. size[${baList.size}]")
 
             //시간체크 후 시간이 초과한 데이터는 BA List에서 제거 한다.
             printBaList()
             baList.removeIf {ba ->
-                var ret = true
+                var ret = false
 
                 if(ba.validFrom != null) {
                     validFromToMills = getMillisFromUtcDatetime(ba.validFrom!!)
                     Log.i(TAG, "validFromToMills = $validFromToMills")
+                    ret = true
                 }
                 if(ba.validUntil != null) {
                     validUntilToMills = getMillisFromUtcDatetime(ba.validUntil!!)
                     Log.i(TAG, "validUntilToMills = $validUntilToMills")
+                    ret = true
                 }
 
                 if (ba.validFrom != null && ba.validUntil != null) {
+                    Log.i(TAG, "시간정보가 존재 함.")
                     ret = currentDateMS !in (validFromToMills + 1) until validUntilToMills
+                    Log.i(TAG, "ret = $ret")
                 }
 
                 ret
             }
+
+            if(baList.size == 0) return
 
             if(isBaRunning) {
                 Log.i(TAG, "현재 동작 중인 BA가 존재 함.")
@@ -326,8 +321,8 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             //현재 시간정보와 현재 동작중인 BA의 validUtil보다 크면 BA를 종료 한다.
                             val currentDateToMs = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
-                            mCurrentBaInfo.validUntil.let {
-                                validUntilToMills = getMillisFromUtcDatetime(mCurrentBaInfo.validUntil!!)
+                            mCurrentBaInfo?.validUntil.let {
+                                validUntilToMills = getMillisFromUtcDatetime(mCurrentBaInfo?.validUntil!!)
 
                                 if(currentDateToMs > validUntilToMills) {
                                     Log.i(TAG, "동작 시간을 초과 하였습니다. BA를 종료 합니다.")
@@ -339,7 +334,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-            } else {
+            } else {    //BA가 동작 중이지 않을 때
                 Log.i(TAG, "현재 동작 중인 BA가 존재하지 않음")
 
                 //baList가 1개 초과인경우
@@ -351,18 +346,30 @@ class MainActivity : AppCompatActivity() {
                             if(ba.default == "true") {
                                 Log.i(TAG, "BA default is true. BA를 동작 합니다.")
                                 //todo BA로드 기능 추가.
+                                baSelectMgr(
+                                    ba.appContextId, ba.appId, ba.requiredCapabilities, ba.validFrom,
+                                    ba.validUntil, ba.default, ba.bbandUrl, ba.bcastPageUrl, ba.bcastPackageUrl
+                                )
                             }
                             isBaDefault = true
                         }
                     }
-                } else {
-                    Log.i(TAG, "BA List가 1개 입니다. BA를 로드 합니다.")
-                    //todo BA Load기능 추가.
-                }
 
-                if(!isBaDefault) {
-                    Log.i(TAG, "최종적으로 BA의 Default설정이 없습니다. 제일 첫번째 BA항목을 로드 합니다.")
-                    //todo 첫번째 BA항목을 로드 한다.
+                    if(!isBaDefault) {
+                        Log.i(TAG, "최종적으로 BA의 Default설정이 없습니다. 제일 첫번째 BA항목을 로드 합니다.")
+                        //todo 첫번째 BA항목을 로드 한다.
+                        mCurrentBaInfo = BAInfo(
+                            baList[0].appContextId, baList[0].appId, baList[0].requiredCapabilities, baList[0].validFrom,
+                            baList[0].validUntil, baList[0].default, baList[0].bbandUrl, baList[0].bcastPageUrl, baList[0].bcastPackageUrl
+                        )
+                    }
+                } else {
+                    Log.i(TAG, "BA List가 1개 입니다. BA를 로드 합니다.size = ${baList.size}")
+                    //todo BA Load기능 추가.
+                    mCurrentBaInfo = BAInfo(
+                        baList[0].appContextId, baList[0].appId, baList[0].requiredCapabilities, baList[0].validFrom,
+                        baList[0].validUntil, baList[0].default, baList[0].bbandUrl, baList[0].bcastPageUrl, baList[0].bcastPackageUrl
+                    )
                 }
             }
         } else {
