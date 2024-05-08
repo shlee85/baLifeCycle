@@ -97,11 +97,15 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "SHLEE"
     private var isBaRunning = false
+    private var isBaDefault = false //현재 BA의 리스트의 후보 항목들의 default가 없는 경우 체크.
+
     private var mCurrentContextId: String? = null
     private var mCurrentAppId: String? = null
-    private lateinit var mCurrentBaInfo: BAInfo
     private var validFromToMills: Long = 0
     private var validUntilToMills: Long = 0
+
+    private lateinit var mCurrentBaInfo: BAInfo
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -211,6 +215,8 @@ class MainActivity : AppCompatActivity() {
 
     @Synchronized
     private fun baListMgr() {
+        isBaDefault = false
+
         if(baList.isNotEmpty()) {
             //현재 시간 기준 vaildFrom과 valildUntil체크 (mills)
             //string to mills로 변환하여 비교 한다.
@@ -244,7 +250,6 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "현재 동작 중인 BA가 존재 함.")
 
                 //app&appContextId를 현재BA의 Id와 비교
-
                 run loop@{
                     baList.forEach {
                         if(it.appId == mCurrentAppId && it.appContextId == mCurrentContextId) {
@@ -259,16 +264,39 @@ class MainActivity : AppCompatActivity() {
 
                                 if(currentDateToMs > validUntilToMills) {
                                     Log.i(TAG, "동작 시간을 초과 하였습니다. BA를 종료 합니다.")
+                                    //todo BA 종료 기능 추가.
+                                    isBaRunning = false
+                                    return@loop
                                 }
                             }
                         }
                     }
                 }
-
-
             } else {
                 Log.i(TAG, "현재 동작 중인 BA가 존재하지 않음")
 
+                //baList가 1개 초과인경우
+                if(baList.size > 1) {
+                    Log.i(TAG, "BA후보 목록이 1개 이상입니다.")
+                    for(ba in baList) {
+                        //ba의 default의 설정 여부 체크.
+                        if(ba.default != null) {
+                            if(ba.default == "true") {
+                                Log.i(TAG, "BA default is true. BA를 동작 합니다.")
+                                //todo BA로드 기능 추가.
+                            }
+                            isBaDefault = true
+                        }
+                    }
+                } else {
+                    Log.i(TAG, "BA List가 1개 입니다. BA를 로드 합니다.")
+                    //todo BA Load기능 추가.
+                }
+
+                if(!isBaDefault) {
+                    Log.i(TAG, "최종적으로 BA의 Default설정이 없습니다. 제일 첫번째 BA항목을 로드 합니다.")
+                    //todo 첫번째 BA항목을 로드 한다.
+                }
             }
         } else {
             Log.i(TAG, "ba List가 존재 하지 않음.")
@@ -281,10 +309,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun baSelectMgr() {
-
+    @Synchronized
+    private fun baSelectMgr(appContextId: String?, appId: String?, requiredCapabilities: String?,
+                            validFrom: String?, validUntil: String?, default: String?, bband: String?,
+                            bcastPageUrl: String?, bcastPackageUrl: String?) {
+        mCurrentBaInfo = BAInfo(
+            appContextId, appId, requiredCapabilities, validFrom, validUntil, default, bband,
+            bcastPageUrl, bcastPackageUrl
+        )
     }
-
 
     private fun getMillisFromUtcDatetime(dateStr: String): Long {
         val dateFormat1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH).apply {
