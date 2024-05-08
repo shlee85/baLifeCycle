@@ -7,13 +7,41 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
+    <Button
+        android:id="@+id/btn_cur_ba_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:text="현재 동작중인 BA정보"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btn_held_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HELD_1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_cur_ba_info" />
+
+    <Button
+        android:id="@+id/btn_held_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HELD_2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_held_1" />
+
+    <Button
+        android:id="@+id/btn_held_3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HELD_3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_held_2" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
