@@ -5,6 +5,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.example.balistupexample.HeldObject.held1
+import com.example.balistupexample.HeldObject.held2
+import com.example.balistupexample.HeldObject.held3
 import com.example.balistupexample.databinding.ActivityMainBinding
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -61,65 +64,6 @@ import java.util.TimeZone
 * */
 
 class MainActivity : AppCompatActivity() {
-    private var held1 = """
-    <HELD>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html" validUntil="2016-07-
-        17T09:30:47Z" default="true"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a2" appContextId="http://kid.pbs.org"
-        bcastEntryPackageUrl="app" requiredCapabilities="050E 058E |"
-        bcastEntryPageUrl="p1a/index.html" validFrom="2016-07-17T08:00:47Z" validUntil="2016-07-17T09:30:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a3" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2/index.html" validFrom="2016-07-
-        17T09:30:47Z" validUntil="2016-07-17T12:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a4" appContextId="http://kids.pbs.org/alt"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html" validFrom="2016-07-
-        17T09:30:47Z" validUntil="2016-07-17T12:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a5" appContextId="http://kids.pbs.org/alt"
-        bbandEntryPageUrl="http://kids.pbs.org/a5/index.html" validFrom="2016-07-17T09:30:47Z"
-        validUntil="2016-07-17T12:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a6" appContextId="http://kids.pbs.org/alt"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html"
-        bbandEntryPageUrl="http://kids.pbs.org/a6/index.html" validFrom="2016-07-17T12:30:47Z"
-        validUntil="2016-07-17T13:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a7" appContextId="http://kids.pbs.org/alt"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html"
-        bbandEntryPageUrl="http://kids.pbs.org/a6/index.html" validFrom="2024-05-07T02:30:47Z"
-        validUntil="2024-05-07T20:00:47Z" requiredCapabilities="050E 058E |"/>
-    </HELD>
-""".trimIndent()
-
-    private var held2 = """
-    <HELD>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html" validUntil="2024-05-
-        08T09:30:47Z" default="true"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a2" appContextId="http://kid.pbs.org"
-        bcastEntryPackageUrl="app" requiredCapabilities="050E 058E |"
-        bcastEntryPageUrl="p1a/index.html" validFrom="2024-05-17T08:00:47Z" validUntil="2024-05-08T09:30:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a3" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2/index.html" validFrom="2016-07-
-        17T09:30:47Z" validUntil="2016-07-17T12:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a4" appContextId="http://kids.pbs.org/alt"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html" validFrom="2024-05-
-        08T09:30:47Z" validUntil="2024-05-08T19:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a5" appContextId="http://kids.pbs.org/alt"
-        bbandEntryPageUrl="http://kids.pbs.org/a5/index.html" validFrom="2016-07-17T09:30:47Z"
-        validUntil="2016-07-17T12:00:47Z"/>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a6" appContextId="http://kids.pbs.org/alt"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html"
-        bbandEntryPageUrl="http://kids.pbs.org/a6/index.html" validFrom="2016-07-17T12:30:47Z"
-        validUntil="2016-07-17T13:00:47Z"/>
-    </HELD>
-""".trimIndent()
-
-    private var held3 = """
-    <HELD>
-        <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html"/>
-    </HELD>
-""".trimIndent()
-
     data class BAInfo(var appContextId: String?, var appId: String?, var requiredCapabilities: String?,
                       var validFrom: String?, var validUntil: String?, var default: String?,
                       var bbandUrl: String?, var bcastPageUrl: String?, var bcastPackageUrl: String?)
@@ -155,12 +99,15 @@ class MainActivity : AppCompatActivity() {
             printBaList()
         }
         binding.btnHeld1.setOnClickListener {
+            baList.clear()
             parseHeld(held1)
         }
         binding.btnHeld2.setOnClickListener {
+            baList.clear()
             parseHeld(held2)
         }
         binding.btnHeld3.setOnClickListener {
+            baList.clear()
             parseHeld(held3)
         }
 
@@ -169,6 +116,7 @@ class MainActivity : AppCompatActivity() {
                 when(it.what) {
                     MSG_HANDLE_RECEIVE_HELD -> {
                         Log.i(TAG, "새로운 held가 들어 왔습니다.")
+                        baList.clear()
                         parseHeld(held1)
                     }
                     MSG_HANDLE_CHECK_LIST -> {
@@ -298,7 +246,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (ba.validFrom != null && ba.validUntil != null) {
-                    Log.i(TAG, "시간정보가 존재 함.")
+                    Log.i(TAG, "시간정보가 존재 함.curr[$currentDateMS]")
                     ret = currentDateMS !in (validFromToMills + 1) until validUntilToMills
                     Log.i(TAG, "ret = $ret")
                 }
@@ -376,7 +324,8 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, "ba List가 존재 하지 않음.")
 
             if(isBaRunning) {
-                Log.i(TAG, "BA를 Un Load합니다.")
+                Log.i(TAG, "BA를 UnLoad합니다.")
+                mCurrentBaInfo = null
             } else {
                 Log.i(TAG, "현재 실행 중인 BA가 없습니다.")
             }
