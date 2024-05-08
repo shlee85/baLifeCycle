@@ -1,11 +1,10 @@
 package com.example.balistupexample
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.balistupexample.databinding.ActivityMainBinding
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -62,7 +61,7 @@ import java.util.TimeZone
 * */
 
 class MainActivity : AppCompatActivity() {
-    private var held = """
+    private var held1 = """
     <HELD>
         <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
         bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html" validUntil="2016-07-
@@ -90,6 +89,37 @@ class MainActivity : AppCompatActivity() {
     </HELD>
 """.trimIndent()
 
+    private var held2 = """
+    <HELD>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
+        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html" validUntil="2024-05-
+        08T09:30:47Z" default="true"/>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a2" appContextId="http://kid.pbs.org"
+        bcastEntryPackageUrl="app" requiredCapabilities="050E 058E |"
+        bcastEntryPageUrl="p1a/index.html" validFrom="2024-05-17T08:00:47Z" validUntil="2024-05-08T09:30:47Z"/>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a3" appContextId="http://kids.pbs.org"
+        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2/index.html" validFrom="2016-07-
+        17T09:30:47Z" validUntil="2016-07-17T12:00:47Z"/>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a4" appContextId="http://kids.pbs.org/alt"
+        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html" validFrom="2024-05-
+        08T09:30:47Z" validUntil="2024-05-08T19:00:47Z"/>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a5" appContextId="http://kids.pbs.org/alt"
+        bbandEntryPageUrl="http://kids.pbs.org/a5/index.html" validFrom="2016-07-17T09:30:47Z"
+        validUntil="2016-07-17T12:00:47Z"/>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a6" appContextId="http://kids.pbs.org/alt"
+        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html"
+        bbandEntryPageUrl="http://kids.pbs.org/a6/index.html" validFrom="2016-07-17T12:30:47Z"
+        validUntil="2016-07-17T13:00:47Z"/>
+    </HELD>
+""".trimIndent()
+
+    private var held3 = """
+    <HELD>
+        <HTMLEntryPackage appId="http://kids.pbs.org/a1" appContextId="http://kids.pbs.org"
+        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html"/>
+    </HELD>
+""".trimIndent()
+
     data class BAInfo(var appContextId: String?, var appId: String?, var requiredCapabilities: String?,
                       var validFrom: String?, var validUntil: String?, var default: String?,
                       var bbandUrl: String?, var bcastPageUrl: String?, var bcastPackageUrl: String?)
@@ -102,12 +132,15 @@ class MainActivity : AppCompatActivity() {
 
     private var mCurrentContextId: String? = null
     private var mCurrentAppId: String? = null
-    private var validFromToMills: Long = 0
-    private var validUntilToMills: Long = 0
 
     private lateinit var mCurrentBaInfo: BAInfo
 
     private lateinit var binding: ActivityMainBinding
+    private var mHandler: Handler? = null
+
+    private val MSG_HANDLE_RECEIVE_HELD = 0
+    private val MSG_HANDLE_CHECK_LIST = 1
+    private val MSG_HANDLE_PRINT_LIST = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,6 +149,18 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnCurBaInfo.setOnClickListener {
             Log.i(TAG, "현재 동작중인 BA의 정보 요청")
+        }
+        binding.btnCurBaList.setOnClickListener {
+            printBaList()
+        }
+        binding.btnHeld1.setOnClickListener {
+            parseHeld(held1)
+        }
+        binding.btnHeld2.setOnClickListener {
+            parseHeld(held2)
+        }
+        binding.btnHeld3.setOnClickListener {
+            parseHeld(held3)
         }
 
         //현재 동작중인 BA의 app 및 appContextId를 임시로 만든다.
@@ -130,13 +175,34 @@ class MainActivity : AppCompatActivity() {
 
         Log.i(TAG, "현재 동작중인 BA 정보 = [$mCurrentBaInfo]")
 
-        baListUp(held)
-        printBaList()
+        if(mHandler == null) {
+            mHandler = Handler(Looper.getMainLooper()) {
+                when(it.what) {
+                    MSG_HANDLE_RECEIVE_HELD -> {
+                        Log.i(TAG, "새로운 held가 들어 왔습니다.")
+                        parseHeld(held1)
+                    }
+                    MSG_HANDLE_CHECK_LIST -> {
+                        baListMgr()
+                    }
+                    MSG_HANDLE_PRINT_LIST -> {
+                        printBaList()
+                    }
+                }
+                true
+            }
+        }
+    }
 
-        baListMgr()
+    override fun onStart() {
+        super.onStart()
+        Log.i(TAG, "onStart()")
+
+        mHandler?.sendEmptyMessage(MSG_HANDLE_RECEIVE_HELD)
     }
 
     private fun printBaList() {
+        Log.i(TAG, "BA List size = ${baList.size}")
         baList.forEach { Log.i(TAG, "$it") }
     }
 
@@ -144,7 +210,7 @@ class MainActivity : AppCompatActivity() {
     //BA후보군으로 관리 하도록 파싱 후 파싱 데이터 List에 추가 한다.
 
     @Synchronized
-    private fun baListUp(held: String) {
+    private fun parseHeld(held: String) {
         Log.i(TAG,"held = [$held]")
         var bcastEntryPackageUrl: String?
         var bcastEntryPageUrl: String?
@@ -155,9 +221,6 @@ class MainActivity : AppCompatActivity() {
         var validUntil: String?
         var default: String?
         var requiredCapabilities: String?
-
-        val currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
-        Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
 
         try {
             val inputStream: InputStream = ByteArrayInputStream(held.toByteArray())
@@ -213,40 +276,42 @@ class MainActivity : AppCompatActivity() {
         }
 
         Log.i(TAG, "파싱 종료.")
+
+        mHandler?.sendEmptyMessage(MSG_HANDLE_CHECK_LIST)
     }
 
     @Synchronized
     private fun baListMgr() {
         isBaDefault = false
+        var validFromToMills: Long = 0
+        var validUntilToMills: Long = 0
+
+        val currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
+        Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
 
         if(baList.isNotEmpty()) {
-            //현재 시간 기준 vaildFrom과 valildUntil체크 (mills)
-            //string to mills로 변환하여 비교 한다.
-            /*
-            var validFromToMills: Long = 0
-            var validUntilToMills: Long = 0
-            if(validFrom != null) {
-                Log.i(TAG, "validFrom = $validFrom")
-                validFromToMills = getMillisFromUtcDatetime(validFrom)
-                Log.i(TAG, "validFromToMills:[$validFromToMills]")
-            }
-
-            if(validUntil != null) {
-                validUntilToMills = getMillisFromUtcDatetime(validUntil)
-                Log.i(TAG, "validUntilToMills:[$validUntilToMills]")
-            }
-
-            if(validFrom != null && validUntil != null) {
-                Log.i(TAG, "[$validFromToMills][$validUntilToMills][$currentDateMS]")
-                if(currentDateMS in (validFromToMills + 1)..<validUntilToMills) {
-                    Log.i(TAG, "조건 충족함 리스트 업.")
-
-                } else {
-                    Log.i(TAG, "조건 충족하지 않음!")
-                }
-            }
-             */
             Log.i(TAG, "ba List가 존재 함.")
+
+            //시간체크 후 시간이 초과한 데이터는 BA List에서 제거 한다.
+            printBaList()
+            baList.removeIf {ba ->
+                var ret = true
+
+                if(ba.validFrom != null) {
+                    validFromToMills = getMillisFromUtcDatetime(ba.validFrom!!)
+                    Log.i(TAG, "validFromToMills = $validFromToMills")
+                }
+                if(ba.validUntil != null) {
+                    validUntilToMills = getMillisFromUtcDatetime(ba.validUntil!!)
+                    Log.i(TAG, "validUntilToMills = $validUntilToMills")
+                }
+
+                if (ba.validFrom != null && ba.validUntil != null) {
+                    ret = currentDateMS !in (validFromToMills + 1) until validUntilToMills
+                }
+
+                ret
+            }
 
             if(isBaRunning) {
                 Log.i(TAG, "현재 동작 중인 BA가 존재 함.")

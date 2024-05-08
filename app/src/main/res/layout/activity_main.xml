@@ -8,14 +8,23 @@
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/btn_cur_ba_info"
+        android:id="@+id/btn_cur_ba_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="현재 동작중인 BA정보"
+        android:text="BA List"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btn_cur_ba_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="현재 동작중인 BA정보"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_cur_ba_list" />
 
     <Button
         android:id="@+id/btn_held_1"
