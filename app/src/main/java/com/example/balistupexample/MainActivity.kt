@@ -5,9 +5,13 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.example.balistupexample.HeldObject.held0
 import com.example.balistupexample.HeldObject.held1
+import com.example.balistupexample.HeldObject.held100
 import com.example.balistupexample.HeldObject.held2
 import com.example.balistupexample.HeldObject.held3
+import com.example.balistupexample.HeldObject.held4
+import com.example.balistupexample.HeldObject.held5
 import com.example.balistupexample.databinding.ActivityMainBinding
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -98,6 +102,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnCurBaList.setOnClickListener {
             printBaList()
         }
+        binding.btnHeld0.setOnClickListener {
+            baList.clear()
+            parseHeld(held0)
+        }
         binding.btnHeld1.setOnClickListener {
             baList.clear()
             parseHeld(held1)
@@ -109,6 +117,18 @@ class MainActivity : AppCompatActivity() {
         binding.btnHeld3.setOnClickListener {
             baList.clear()
             parseHeld(held3)
+        }
+        binding.btnHeld4.setOnClickListener {
+            baList.clear()
+            parseHeld(held4)
+        }
+        binding.btnHeld5.setOnClickListener {
+            baList.clear()
+            parseHeld(held5)
+        }
+        binding.btnHeld6.setOnClickListener {
+            baList.clear()
+            parseHeld(held100)
         }
 
         if(mHandler == null) {
@@ -226,6 +246,9 @@ class MainActivity : AppCompatActivity() {
         val currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
         Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
 
+        mCurrentAppId = mCurrentBaInfo?.appId
+        mCurrentContextId = mCurrentBaInfo?.appContextId
+
         if(baList.isNotEmpty()) {
             Log.i(TAG, "ba List가 존재 함. size[${baList.size}]")
 
@@ -254,10 +277,14 @@ class MainActivity : AppCompatActivity() {
                 ret
             }
 
-            if(baList.size == 0) return
-
             if(isBaRunning) {
                 Log.i(TAG, "현재 동작 중인 BA가 존재 함.")
+                if(baList.size == 0){
+                    Log.i(TAG, "BA 리스트가 없음. 로드되어 있는 BA종료")
+                    isBaRunning = false
+                    mCurrentBaInfo = null
+                    return
+                }
 
                 //app&appContextId를 현재BA의 Id와 비교
                 run loop@{
@@ -269,18 +296,39 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             //현재 시간정보와 현재 동작중인 BA의 validUtil보다 크면 BA를 종료 한다.
                             val currentDateToMs = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
-                            mCurrentBaInfo?.validUntil.let {
+                            mCurrentBaInfo?.validUntil?.let {
+                                Log.i(TAG, "mCurrentBaInfo?.validUntil = ${mCurrentBaInfo?.validUntil}")
                                 validUntilToMills = getMillisFromUtcDatetime(mCurrentBaInfo?.validUntil!!)
 
                                 if(currentDateToMs > validUntilToMills) {
                                     Log.i(TAG, "동작 시간을 초과 하였습니다. BA를 종료 합니다.")
                                     //todo BA 종료 기능 추가.
+                                    mCurrentBaInfo = null
                                     isBaRunning = false
                                     return@loop
                                 }
                             }
+
+                            //현재 동작중인 BA정보와 List의 BA정보가 다르면 새로운 BA를 동작 시킨다.
+                            //이미 다른 appId가 존재 함을 확인 하였고 default가 true면 해당 BA를 로드 하면 된다.
+                            if(it.default == "true") {
+                                Log.i(TAG, "현재 BA와 값이 다르며 Default가 설정된 BA가 존재 함. 새롭게 실행.")
+                                isBaRunning = true
+                                baSelectMgr(
+                                    it.appContextId, it.appId, it.requiredCapabilities, it.validFrom,
+                                    it.validUntil, it.default, it.bbandUrl, it.bcastPageUrl, it.bcastPackageUrl
+                                )
+                                return@loop
+                            }
                         }
                     }
+
+                    Log.i(TAG, "Default가 ture인 데이터가 존재 하지 않음. 하지만 BA내용은 다름. 첫번째 BA를 로드 한다.")
+                    isBaRunning = true
+                    baSelectMgr(
+                        baList[0].appContextId, baList[0].appId, baList[0].requiredCapabilities, baList[0].validFrom,
+                        baList[0].validUntil, baList[0].default, baList[0].bbandUrl, baList[0].bcastPageUrl, baList[0].bcastPackageUrl
+                    )
                 }
             } else {    //BA가 동작 중이지 않을 때
                 Log.i(TAG, "현재 동작 중인 BA가 존재하지 않음")
@@ -310,6 +358,7 @@ class MainActivity : AppCompatActivity() {
                             baList[0].appContextId, baList[0].appId, baList[0].requiredCapabilities, baList[0].validFrom,
                             baList[0].validUntil, baList[0].default, baList[0].bbandUrl, baList[0].bcastPageUrl, baList[0].bcastPackageUrl
                         )
+                        isBaRunning = true
                     }
                 } else {
                     Log.i(TAG, "BA List가 1개 입니다. BA를 로드 합니다.size = ${baList.size}")
@@ -318,6 +367,7 @@ class MainActivity : AppCompatActivity() {
                         baList[0].appContextId, baList[0].appId, baList[0].requiredCapabilities, baList[0].validFrom,
                         baList[0].validUntil, baList[0].default, baList[0].bbandUrl, baList[0].bcastPageUrl, baList[0].bcastPackageUrl
                     )
+                    isBaRunning = true
                 }
             }
         } else {
@@ -325,6 +375,7 @@ class MainActivity : AppCompatActivity() {
 
             if(isBaRunning) {
                 Log.i(TAG, "BA를 UnLoad합니다.")
+                isBaRunning = false
                 mCurrentBaInfo = null
             } else {
                 Log.i(TAG, "현재 실행 중인 BA가 없습니다.")
