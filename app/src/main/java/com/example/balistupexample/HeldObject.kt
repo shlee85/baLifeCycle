@@ -25,7 +25,7 @@ object HeldObject {
         <HTMLEntryPackage appId="http://kids.pbs.org/a7" appContextId="http://kids.pbs.org/alt"
         bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html"
         bbandEntryPageUrl="http://kids.pbs.org/a6/index.html" validFrom="2024-05-08T02:30:47Z"
-        validUntil="2024-05-09T20:00:47Z" requiredCapabilities="050E 058E |"/>
+        validUntil="2024-05-09T16:07:20Z" requiredCapabilities="050E 058E |"/>
     </HELD>
 """.trimIndent()
 

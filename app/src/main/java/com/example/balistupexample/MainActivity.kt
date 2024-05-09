@@ -22,6 +22,7 @@ import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.ZoneOffset.UTC
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -248,8 +249,9 @@ class MainActivity : AppCompatActivity() {
         var validFromToMills: Long = 0
         var validUntilToMills: Long = 0
 
-        val currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
+        var currentDateMS: Long = getMillisFromUtcDatetime(getUtcDatetimeAsDate())
         Log.i(TAG, "getUtcDatetimeAsDate = [$currentDateMS]")
+        currentDateMS += 32400000 // UTC+9
 
         mCurrentAppId = mCurrentBaInfo?.appId
         mCurrentContextId = mCurrentBaInfo?.appContextId
@@ -269,7 +271,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 if(ba.validUntil != null) {
                     validUntilToMills = getMillisFromUtcDatetime(ba.validUntil!!)
-                    Log.i(TAG, "validUntilToMills = $validUntilToMills")
+                    Log.i(TAG, "validUntilToMills = $validUntilToMills(${ba.validUntil}), +9적용: [${validUntilToMills + 32400000}]")
                     //ret = true
                 }
 
@@ -386,6 +388,8 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "현재 실행 중인 BA가 없습니다.")
             }
         }
+
+        mHandler?.sendEmptyMessageDelayed(MSG_HANDLE_CHECK_LIST, 5000) //3초마다 주기적으로 List를 체크 하도록 한다.
     }
 
     @Synchronized
