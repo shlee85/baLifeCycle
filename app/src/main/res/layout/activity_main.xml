@@ -78,7 +78,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_held_4" />
-
     <Button
         android:id="@+id/btn_held_6"
         android:layout_width="wrap_content"
@@ -87,5 +86,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_held_5" />
+    <Button
+        android:id="@+id/btn_held_100"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HELD_100"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_held_6" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

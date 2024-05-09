@@ -12,6 +12,7 @@ import com.example.balistupexample.HeldObject.held2
 import com.example.balistupexample.HeldObject.held3
 import com.example.balistupexample.HeldObject.held4
 import com.example.balistupexample.HeldObject.held5
+import com.example.balistupexample.HeldObject.held6
 import com.example.balistupexample.databinding.ActivityMainBinding
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -127,6 +128,10 @@ class MainActivity : AppCompatActivity() {
             parseHeld(held5)
         }
         binding.btnHeld6.setOnClickListener {
+            baList.clear()
+            parseHeld(held6)
+        }
+        binding.btnHeld100.setOnClickListener {
             baList.clear()
             parseHeld(held100)
         }
@@ -260,12 +265,12 @@ class MainActivity : AppCompatActivity() {
                 if(ba.validFrom != null) {
                     validFromToMills = getMillisFromUtcDatetime(ba.validFrom!!)
                     Log.i(TAG, "validFromToMills = $validFromToMills")
-                    ret = true
+                    //ret = true
                 }
                 if(ba.validUntil != null) {
                     validUntilToMills = getMillisFromUtcDatetime(ba.validUntil!!)
                     Log.i(TAG, "validUntilToMills = $validUntilToMills")
-                    ret = true
+                    //ret = true
                 }
 
                 if (ba.validFrom != null && ba.validUntil != null) {
