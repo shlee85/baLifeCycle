@@ -92,6 +92,8 @@ class MainActivity : AppCompatActivity() {
     private val MSG_HANDLE_CHECK_LIST = 1
     private val MSG_HANDLE_PRINT_LIST = 2
 
+    private val appId = "http://kids.pbs.org/a1"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -135,6 +137,11 @@ class MainActivity : AppCompatActivity() {
         binding.btnHeld100.setOnClickListener {
             baList.clear()
             parseHeld(held100)
+        }
+        //후보 목록에서 appid를 검색 후 appContextId를 검색 한다.
+        binding.btnAppId1.setOnClickListener {
+            Log.i(TAG, "AppId변경.(Launch APP)")
+            changeCurrentBA("http://kids.pbs.org/a3")
         }
 
         if(mHandler == null) {
@@ -400,6 +407,35 @@ class MainActivity : AppCompatActivity() {
             appContextId, appId, requiredCapabilities, validFrom, validUntil, default, bband,
             bcastPageUrl, bcastPackageUrl
         )
+    }
+
+    //appId는 필수 (Launch APP)
+    //appId가 같은데 같은 appId가 n개 이상이면 appContextId를 추가로 비교 한다. (appId와 같은지)
+    //appId가 아예 없으면 동작 하면 안됨!(A/344 p186참고)
+    private fun changeCurrentBA(appId: String) {
+        //현재 동작중인 BA의 appid와 전달받은 appid가 다를 때 아래 동작을 수행한다.
+        if(mCurrentAppId != appId) {
+            Log.i(TAG, "현재 동작중인 BA의 appId와 전달 받은 appId가 다름.")
+            for(baIdx in baList.indices) {
+                if(baList[baIdx].appId == appId) {
+                    Log.i(TAG, "요청한 appId가 존재 한다.")
+                    if(baList[baIdx].appContextId == appId) {
+                        Log.i(TAG, "appContextId가 appId와 같음. 동작.")
+                        baSelectMgr(
+                            baList[baIdx].appContextId, baList[baIdx].appId, baList[baIdx].requiredCapabilities, baList[baIdx].validFrom,
+                            baList[baIdx].validUntil, baList[baIdx].default, baList[baIdx].bbandUrl, baList[baIdx].bcastPageUrl, baList[baIdx].bcastPackageUrl
+                        )
+                        break
+                    } else {
+                        Log.i(TAG, "appContextId가 appId와 다르다.")
+                        baSelectMgr(
+                            baList[baIdx].appContextId, baList[baIdx].appId, baList[baIdx].requiredCapabilities, baList[baIdx].validFrom,
+                            baList[baIdx].validUntil, baList[baIdx].default, baList[baIdx].bbandUrl, baList[baIdx].bcastPageUrl, baList[baIdx].bcastPackageUrl
+                        )
+                    }
+                }
+            }
+        } else Log.i(TAG, "BA가 서로 같음( BA change하지 않는다. )")
     }
 
     private fun getMillisFromUtcDatetime(dateStr: String): Long {
