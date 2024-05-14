@@ -2,10 +2,12 @@ package com.example.balistupexample
 
 object HeldObject {
     //단일 -> 단일 실행 되어야 한다.
+    //bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html"
+    //bband전용
     var held0 = """
-    <HELD>
+    <HELD> 
         <HTMLEntryPackage appId="http://kids.pbs.org/a3" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p1/index.html"/>
+         bbandEntryPageUrl="http://kids.pbs.org/a6/index.html"/>
     </HELD>
 """.trimIndent()
 
@@ -30,6 +32,7 @@ object HeldObject {
 """.trimIndent()
 
     //다중 = 유효한 시간정보가 2개, default=true 한개 있는 경우  ->  default가 true인 held데이터가 우선 동작. (validUntil만 초과하지 않으면 해당 값 유효)
+    //bcastEntryPackageUrl="app" bcastEntryPageUrl="p2/index.html"
     var held2 = """
     <HELD>
         <HTMLEntryPackage appId="http://kids.pbs.org/a12" appContextId="http://kids.pbs.org"
@@ -39,8 +42,8 @@ object HeldObject {
         bcastEntryPackageUrl="app" requiredCapabilities="050E 058E |"
         bcastEntryPageUrl="p1a/index.html" validFrom="2024-05-17T08:00:47Z" validUntil="2024-05-10T09:30:47Z"/>
         <HTMLEntryPackage appId="http://kids.pbs.org/a3" appContextId="http://kids.pbs.org"
-        bcastEntryPackageUrl="app" bcastEntryPageUrl="p2/index.html" validFrom="2016-07-
-        17T09:30:47Z" validUntil="2016-07-17T12:00:47Z"/>
+        bbandEntryPageUrl="http://kids.pbs.org/a6/index.html"
+        validFrom="2024-05-13T09:30:47Z" validUntil="2024-07-17T12:00:47Z"/>
         <HTMLEntryPackage appId="http://kids.pbs.org/a42" appContextId="http://kids.pbs.org/alt"
         bcastEntryPackageUrl="app" bcastEntryPageUrl="p2a/index.html" validFrom="2024-05-
         08T12:30:47Z" validUntil="2024-05-10T19:00:47Z"/>

@@ -413,12 +413,15 @@ class MainActivity : AppCompatActivity() {
     //appId가 같은데 같은 appId가 n개 이상이면 appContextId를 추가로 비교 한다. (appId와 같은지)
     //appId가 아예 없으면 동작 하면 안됨!(A/344 p186참고)
     private fun changeCurrentBA(appId: String) {
+        var ret = 0
+        var appIdExist = false
         //현재 동작중인 BA의 appid와 전달받은 appid가 다를 때 아래 동작을 수행한다.
         if(mCurrentAppId != appId) {
             Log.i(TAG, "현재 동작중인 BA의 appId와 전달 받은 appId가 다름.")
             for(baIdx in baList.indices) {
                 if(baList[baIdx].appId == appId) {
                     Log.i(TAG, "요청한 appId가 존재 한다.")
+                    appIdExist = true
                     if(baList[baIdx].appContextId == appId) {
                         Log.i(TAG, "appContextId가 appId와 같음. 동작.")
                         baSelectMgr(
@@ -436,6 +439,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else Log.i(TAG, "BA가 서로 같음( BA change하지 않는다. )")
+
+        if(!appIdExist) {
+            Log.i(TAG, "appId가 존재하지 않는다.")
+            ret = -23
+        } else {
+            Log.i(TAG, "appId가 존재 한다.[${mCurrentBaInfo?.bcastPageUrl}][${mCurrentBaInfo?.bcastPackageUrl}][${mCurrentBaInfo?.bbandUrl}]")
+            if(mCurrentBaInfo?.bcastPageUrl == null && mCurrentBaInfo?.bcastPackageUrl == null &&
+                mCurrentBaInfo?.bbandUrl != null) {
+                Log.i(TAG, "Boradband전용.")
+            }
+        }
     }
 
     private fun getMillisFromUtcDatetime(dateStr: String): Long {
